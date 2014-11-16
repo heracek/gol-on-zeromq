@@ -22,6 +22,14 @@ end
 function love.keypressed(key, isrepeat)
   if key == "escape" then
     love.event.quit()
+  elseif key == "up" then
+    self.position_y = self.position_y + 1
+  elseif key == "down" then
+    self.position_y = self.position_y - 1
+  elseif key == "left" then
+    self.position_x = self.position_x + 1
+  elseif key == "right" then
+    self.position_x = self.position_x - 1
   end
 end
 
