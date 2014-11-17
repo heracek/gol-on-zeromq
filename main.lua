@@ -9,6 +9,8 @@ function love.load(arg)
   self = {
     living_cells = {
       {0, 0},
+      {1, 0},
+      {0, 1},
       {1, 1},
       {2, 1},
       {2, 3},
@@ -16,12 +18,12 @@ function love.load(arg)
     width = width,
     height = height,
     line_width = 1,
-    cell_size = 9,
+    cell_size = 7,
     zmq = {},
   }
   self.grid_step = self.line_width + self.cell_size
-  self.position_x = self.width / 2 / self.grid_step
-  self.position_y = self.height / 2 / self.grid_step
+  self.position_x = math.floor(self.width / 2 / self.grid_step)
+  self.position_y = math.floor(self.height / 2 / self.grid_step)
 
   self.zmq.ctx = zmq.context()
   self.zmq.socket = self.zmq.ctx:socket{ zmq.PAIR,
@@ -30,17 +32,28 @@ function love.load(arg)
   }
 end
 
-function love.keypressed(key, isrepeat)
-  if key == "escape" then
+local keypressed_cases = {
+  escape = function()
     love.event.quit()
-  elseif key == "up" then
+  end,
+  up = function()
     self.position_y = self.position_y + 1
-  elseif key == "down" then
+  end,
+  down = function()
     self.position_y = self.position_y - 1
-  elseif key == "left" then
+  end,
+  left = function()
     self.position_x = self.position_x + 1
-  elseif key == "right" then
+  end,
+  right = function()
     self.position_x = self.position_x - 1
+  end,
+}
+
+function love.keypressed(key, isrepeat)
+  local keypressed_handler = keypressed_cases[key]
+  if keypressed_handler then
+    keypressed_handler()
   end
 end
 
@@ -83,8 +96,8 @@ function draw_living_cells(self)
     love.graphics.rectangle("fill",
       grid_x * self.grid_step,
       grid_y * self.grid_step,
-      self.cell_size,
-      self.cell_size
+      self.grid_step,
+      self.grid_step
     )
   end
 end
