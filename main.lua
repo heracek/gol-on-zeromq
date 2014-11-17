@@ -1,3 +1,7 @@
+require "luarocks.loader"
+local zmq = require "lzmq"
+local json = require "dkjson"
+
 function love.load(arg)
   if arg[#arg] == "-debug" then require("mobdebug").start() end
 
@@ -13,10 +17,17 @@ function love.load(arg)
     height = height,
     line_width = 1,
     cell_size = 9,
+    zmq = {},
   }
   self.grid_step = self.line_width + self.cell_size
   self.position_x = self.width / 2 / self.grid_step
   self.position_y = self.height / 2 / self.grid_step
+
+  self.zmq.ctx = zmq.context()
+  self.zmq.socket = self.zmq.ctx:socket{ zmq.PAIR,
+    linger = 1000, rcvtimeo = 1000,
+    bind = "tcp://127.0.0.1:5555",
+  }
 end
 
 function love.keypressed(key, isrepeat)
@@ -36,6 +47,16 @@ end
 function love.update(dt)
   local _
   self.width, self.height, _ = love.window.getMode()
+
+  local world_json = self.zmq.socket:recv(zmq.DONTWAIT)
+  if world_json then
+    local world, pos, err = json.decode(world_json, 1, nil)
+    if err then
+      print ("Error:", err)
+    else
+      self.living_cells = world.living_cells
+    end
+  end
 end
 
 function love.draw()
@@ -47,6 +68,10 @@ function love.draw()
 
   love.graphics.setColor(128,128,255)
   love.graphics.print("FPS: "..tostring(love.timer.getFPS()), 5, 5)
+end
+
+function love.quit()
+  self.zmq.socket:close(0)
 end
 
 function draw_living_cells(self)
